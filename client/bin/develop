@@ -1,0 +1,7 @@
+docker stop client0 2> /dev/null
+docker rm client0 2> /dev/null
+docker run \
+       --name client0 \
+       --rm -i -t -P \
+       -v /home/core/share/legal-ease/client:/src \
+       legal-ease/client /bin/bash

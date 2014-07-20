@@ -1,0 +1,7 @@
+#!/bin/bash
+
+if [ "$CARBON_PORT_2003_TCP_ADDR" ]; then
+  sed -ire "s/REPLACEME/$API_PORT_2003_TCP_ADDR/" /node_modules/statsd/config.js
+fi
+
+exec node /node_modules/statsd/stats.js /node_modules/statsd/config.js

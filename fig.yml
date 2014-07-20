@@ -1,0 +1,74 @@
+db:
+    build: ./db
+    volumes:
+        - /home/core/share/dex/volumes/postgres-data:/var/lib/postgresql/9.3/main
+    command: /bin/sh /start
+
+redis:
+    build: ./redis
+    volumes:
+        - /home/core/share/dex/volumes/redis-snaps:/redis-snaps
+    command: /usr/local/bin/redis-server /redis.conf
+
+# carbon:
+#     build: ./stats/carbon
+#     volumes:
+#         - ./volumes/whisper-data:/opt/graphite/storage/whisper
+#     command: /bin/bash /start
+
+# statsd:
+#     build: ./stats/statsd
+#     links:
+#         - carbon:carbon
+
+# graphiteapi:
+#     build: ./stats/graphiteapi
+#     volumes:
+#         - ./volumes/whisper-data:/srv/graphite/whisper
+#     command: /usr/local/bin/featherctl start -u graphiteapi -g graphiteapi -f acaowrap:app
+
+# elasticsearch:
+#     build: ./stats/elasticsearch
+#     volumes:
+#         - ./volumes/elasticsearch:/elasticsearch/data
+#     command: /bin/sh /elasticsearch/bin/elasticsearch
+
+# grafana:
+#     build: ./stats/grafana
+#     links:
+#         - graphiteapi:graphite
+#         - elasticsearch:elasticsearch
+#     command: /bin/bash /start
+
+server:
+    build: ./server
+    volumes:
+        - /home/core/share/dex/volumes/logs:/logs
+        - /home/core/share/dex/volumes/docs:/docs
+    ports:
+      - "48080:80"
+    links:
+        - db:db
+        - redis:redis
+    command: /srv/bin/start -w -p 80 -u legalease -g legalease
+
+client:
+    build: ./client
+    ports:
+      - "48000:80"
+    links:
+        - server:api
+    volumes:
+        - /home/core/share/dex/client/:/src
+    command: nginx
+
+# sentrydb:
+#     build: ./sentry/db
+#     volumes:
+#         - ./volumes/sentry-postgres:/var/lib/postgresql/9.3/main
+#     command: /bin/bash /start
+
+# sentryweb:
+#     build: ./sentry/web
+#     links:
+#         - sentrydb:db

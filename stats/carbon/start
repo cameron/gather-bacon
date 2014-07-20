@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+
+chown -R carbon:carbon /opt/graphite/storage/whisper
+python /opt/graphite/bin/carbon-cache.py --debug start

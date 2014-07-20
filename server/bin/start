@@ -1,0 +1,53 @@
+#!/usr/bin/env bash
+export PYTHONPATH="/srv/app"
+
+h=0.0.0.0
+p=80
+
+usage() {
+    echo "usage: $0 [-h HOST] [-p PORT] [-w]" >&2
+    exit 1
+}
+
+while getopts ":h:p:u:g:w" o; do
+    case "${o}" in
+        h)
+            h=${OPTARG}
+            ;;
+        p)
+            p=${OPTARG}
+            ;;
+        u)
+            u="-u ${OPTARG}"
+            user="${OPTARG}"
+            ;;
+        g)
+            g="-g ${OPTARG}"
+            group="${OPTARG}"
+            ;;
+        w)
+            w=1
+            ;;
+        *)
+            usage
+            ;;
+    esac
+done
+
+
+if [ -n "$u" ]; then
+    chown $user:$group /logs
+    chmod 770 /logs
+fi
+
+featherctl -c legalease start -H $h -P $p $u $g -t -m legalease.server:Monitor legalease.app:app
+featherctl -c legalease status
+
+if [ -z "$w" ]; then
+    exit 0
+fi
+
+trap 'featherctl -c legalease stop' TERM INT
+while ps -p $(featherctl -c legalease status -m) &>/dev/null; do
+    sleep 1
+done

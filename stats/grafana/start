@@ -1,0 +1,11 @@
+#!/bin/bash
+
+if [ "$GRAPHITE_PORT_8000_TCP_ADDR" ]; then
+	sed -ire "s,GRAPHITEHOST,http://$GRAPHITE_PORT_8000_TCP_ADDR:$GRAPHITE_PORT_8000_TCP_PORT," /webroot/config.js
+fi
+
+if [ "$ELASTICSEARCH_PORT_9200_TCP_ADDR" ]; then
+  sed -ire "s,ELASTICSEARCHHOST,http://$ELASTICSEARCH_PORT_9200_TCP_ADDR:$ELASTICSEARCH_PORT_9200_TCP_PORT," /webroot/config.js
+fi
+
+exec nginx

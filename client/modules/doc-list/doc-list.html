@@ -1,0 +1,10 @@
+<div ng-controller="DocListCtrl">
+  <form action='{{ uploadUrl }}' ng-upload=''>
+    <input type='file' name='upload' /><input type='submit' ng-disabled='$isLoading' />
+  </form>
+  <ul>
+    <li ng-repeat="doc in docs">
+      <a href="/docs/{{ doc.id }}" target="_blank">{{ doc.name }}</a>
+    </li>
+  </ul>
+</div>

@@ -1,0 +1,6 @@
+*.pyc
+.*.sw?
+.sw?
+*.log
+id_rsa*
+server/docs

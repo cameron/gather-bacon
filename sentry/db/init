@@ -1,0 +1,16 @@
+#!/bin/bash
+
+PGVERSION="9.3"
+BINDIR="/usr/lib/postgresql/$PGVERSION/bin"
+DATADIR="/var/lib/postgresql/$PGVERSION/main"
+
+chown -R postgres:postgres $DATADIR
+chmod -R 700 $DATADIR
+
+su postgres -c "$BINDIR/initdb -E UTF8 -D $DATADIR"
+su postgres -c "$BINDIR/pg_ctl start -D $DATADIR"
+
+su postgres -c postgres <<EOF
+create role sentry with login;
+create database sentry with owner sentry;
+EOF

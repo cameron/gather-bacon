@@ -1,0 +1,45 @@
+Preoptimized total: .03-.3
+Preopt target: terms (90-99% of execution time)
+
+1.
+
+remove db.fetchall() command
+break terms block in to sql and sorting blocks for time stats
+
+Result:
+
+Time Range: roughly unchanged
+Next target: terms sql (75-94% of execution time)
+
+
+2.
+
+Remove row doc1's terms sql and sorting blocks form the doc2 loop
+
+Result:
+
+Time Range:  .03-.2 
+Next target: terms sql and sort (together, using an upper limit-ish of 95%, but almost 50-50 not infrequently, and on avg 25-75)
+
+
+3.
+
+terms sort block (really, terms gather block) from:
+
+d2_terms = dict([(term,tfidf) for term,tfidf in db.fetchall()])
+
+to:
+
+d2_terms = {}
+for term,tfidf in db:
+	d2_terms[term] = tfidf
+
+Result:
+
+
+Time Range: .03 - .1
+Next target: sql
+
+
+4.
+
