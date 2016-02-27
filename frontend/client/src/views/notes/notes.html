@@ -1,0 +1,12 @@
+<notes class="scrollable-content list-group"
+       ng-class="{'no-scroll': editing}">
+  <note ng-repeat="note in notes"
+        ng-class="{editing: note.editing}"
+        ng-click="editNote(note, $event)">
+    <textarea ng-click="editNote(note, $event)"
+              ng-model="note.text"
+              ng-model-options="{debounce: 2000}"></textarea>
+  </note>
+</notes>
+
+<px-loading ng-show="notes === undefined"></px-loading>

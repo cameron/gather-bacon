@@ -1,0 +1,34 @@
+db:
+    build: ./db
+    command: /bin/sh /start
+    ports:
+      - 5432:5432
+
+redis:
+    build: ./redis
+    volumes:
+        - ./volumes/redis-snaps:/redis-snaps
+    command: /usr/local/bin/redis-server /redis.conf
+
+server:
+    tty: true
+    stdin_open: true
+    build: ./server
+    volumes:
+        - ./volumes/logs:/logs
+        - /home/core/share/jot/server/src:/srv/app/
+    links:
+        - db:db
+        - redis:redis
+    command: "echo 'asdf'; ls /srv"
+    ports:
+      - 8080:8000
+
+frontend:
+    build: ./frontend
+    ports:
+      - 8000:80
+    links:
+      - server:server
+    volumes:
+      - /home/core/share/jot/frontend/client:/webclient

@@ -1,0 +1,16 @@
+<tags>
+  <tag ng-repeat="tag in tagQuery"
+       ng-class="{removing: tag.confirmingRemoval}">
+    {{ tag.name }}
+  </tag>
+</tags>
+
+<label class="ss-search" for="note-search">
+</label>
+
+<input class="note-search"
+       type="text"
+       ng-disabled="notes.length == 0"
+       ng-model="searchQuery"
+       ng-blur="searchBlur()"
+       px-empty-backspace="popTag()"/>
