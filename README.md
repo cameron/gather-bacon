@@ -1,5 +1,5 @@
-# Jot
+# Dex
 
-A simple note-taking demo app using [databacon](http://github.com/cameron/databacon).
+A web crawler demonstration of [databacon](http://github.com/cameron/databacon), a non-relational, horizontally scalable persistence framework.
 
-Persistent data types are declared in [schema.py](server/src/schema.py), and consumed in [routes.py](server/src/routes.py) to create a JSON API.
+Persistent data types are declared in [schema.py](server/src/schema.py), and then the fun gets started in [crawl.py](server/src/crawl.py).
