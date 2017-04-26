@@ -1,3 +1,5 @@
+import time 
+
 import greenhouse
 
 import databacon as db
@@ -5,40 +7,55 @@ from domain import Domain
 from www import WWW
 from lib import profile
 
-www = WWW.singleton()
 
 class Crawler(db.Node):
-  GREENLET_POOL_SIZE = 80000
-  TIMEOUT = 10
+  # number of page-fetching coroutines to run concurrently,
+  # each one owning a domain
+  CRAWLER_COROS = 50000
+
+  # amount of time allowed to elapse without a heartbeat
+  TIMEOUT = 30
   parent = WWW
   schema = int
   domains = db.relation(Domain)
-  # re-fetch the entire list of domains every 30 seconds
-  # or use junction?
-
+  num_domains = db.prop(int)
 
   def __init__(self, *args, **kwargs):
+    kwargs.setdefault('parent', WWW.singleton())
     super(Crawler, self).__init__(*args, **kwargs)
-    # TODO get domains from existing crawlers
-    self.parent.request_domains(self)
-    self.crawl()
+    if 'dh' not in kwargs:
+      self.parent.add_crawler(self)
 
 
-  def crawl():
-    greenhouse.map(
+  def add_domain(domain):
+    self.domains.add(domain)
+    self.num_domains.increment()
+
+
+  def crawl(self):
+    domains = list(self.domains())
+    print 'domains', domains
+    print WWW.singleton().domains.of_type._meta
+    # TODO handle no domains
+    list(greenhouse.map(
       lambda d: d.fetch_queued_pages(),
-      self.domains(),
-      pool_size=self.GREENLET_POOL_SIZE
-    )
+      domains,
+      pool_size=self.CRAWLER_COROS,
+    ))
+
+
+  def heartbeat(self):
+    self.increment()
+
 
   @classmethod
-  def resume_or_create(cls):
+  def wake_or_create(cls):
     ''' Entry-point for a new crawl process. '''
-    for c in www.crawlers():
-      if c.value + TIMEOUT < time.time():
+    print 'wake or create crawler...',
+    for c in WWW.singleton().crawlers():
+      if c.value + cls.TIMEOUT < time.time():
         crawler = c
-        'resuming crawler', c._dh['guid']
-        c.crawl()
+        print 'awoke', c._dh['id']
         return crawler
-    'creating new crawler'
-    return cls(parent=www)
+    print 'creating'
+    return cls()

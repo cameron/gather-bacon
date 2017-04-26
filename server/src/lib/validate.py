@@ -1,3 +1,4 @@
+import app_exceptions
 
 def email(email):
   if len(email) < 6 and '@' in email and '.' in email:
@@ -7,4 +8,3 @@ def email(email):
 def password(pw):
   if len(password) < 6:
     raise app_exceptions.BadRequest("Password too short.")
-

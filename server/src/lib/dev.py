@@ -15,4 +15,5 @@ def info(type, value, tb):
         # pdb.pm() # deprecated
         pdb.post_mortem(tb) # more modern
 
-sys.excepthook = info
+#sys.excepthook = info
+

@@ -1,30 +1,32 @@
 import greenhouse
+from datahog.error import AliasInUse
 import databacon as db
 from www import WWW
+from domain import Domain
 
 class Page(db.Node):
   schema = unicode
+
+  # TODO upgrade to the more recent version of datahog that doens't have entities
+  parent = Domain
+
   domain = db.relation('Domain')
   fetched = db.prop(int)
   url = db.lookup.alias()
   links = db.relation('Page')
 
 
-  def __init__(self, url=None):
-    # DH TODO adopt a pattern for passing kwargs to constructors
-    # to create props
-    super(Page, self).__init__()
-    try:
-      u = self.url(u)
-    except AliasInUse as e:
-      # TODO delete self
-      print "page already exists! " + url
-    # TODO steal domains from existing crawlers
+  def _create(self, url=None, **kwargs):
+    self.url(url)
+    self.domain.add(Domain.by_url(url))
+    self.fetched(0)
+
 
   @property
-  def domain(self):
+  def domain_str(self):
     # TODO implement _attr prop caching? seems good for aliases
-    return self._url.value[:self._url.value.indexOf('/')]
+    return self.url.value[:self.url.value.indexOf('/')]
+
 
   def fetch(self):
     # TODO 2nd call for some kind of prop caching
@@ -32,7 +34,8 @@ class Page(db.Node):
     self.save()
     self.fetched(time.time())
     doc = html.fromstring(self.value)
-    WWW.singleton().add_urls([href.attrs for href in doc.xpath('//a')])
+    urls = [href.attrs for href in doc.xpath('//a')]
+    WWW.singleton().add_urls(urls)
 
 
   # TODO remove?
