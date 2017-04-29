@@ -1,0 +1,8 @@
+#! /bin/zsh
+
+dkill gatherbacon 2> /dev/null
+echo $1 | grep Dockerfile
+if [ $? -eq 0 ]; then
+   docker-compose build
+fi
+unbuffer docker-compose run --service-ports server

@@ -1,0 +1,4 @@
+#! /bin/zsh
+
+# TODO newfile loop
+while true; do ls ***/*py | entr -d dshell gatherbacon_server "touch /.reload"; done

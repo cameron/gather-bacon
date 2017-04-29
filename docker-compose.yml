@@ -1,21 +1,20 @@
-db:
-    build: ./db
-    command: /bin/sh /start
-    ports:
-      - 5432:5432
-
 server:
     tty: true
     stdin_open: true
     build: ./server
     volumes:
         - ./volumes/logs:/logs
-        - ./server/src:/app/
+        - ./server/app:/app/
         - ./server/vendor/greenhouse:/vendor/greenhouse
         - ./server/vendor/datahog:/vendor/datahog
         - ./server/vendor/databacon:/vendor/databacon
     links:
         - db:db
-    command: bash -c "sleep 999999999"
     ports:
-      - 8080:8000
+      - 8080:80
+
+db:
+    build: ./db
+    command: /bin/sh /start
+    ports:
+      - 5432:5432

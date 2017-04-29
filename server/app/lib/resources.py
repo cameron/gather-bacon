@@ -6,12 +6,16 @@ import databacon
 import greenhouse
 
 
+sys_name = None
+for key, val in os.environ.items():
+    if key.endswith('_NAME'):
+        sys_name = val[1:val.find('_')].upper()
+        break
+
 def setup_dbpool():
-    #TODO: cross-mount a unix domain socket
-    host = '192.168.99.100'
-    host = os.environ['DEX_DB_1_PORT_5432_TCP_ADDR']
-    print(host)
-    port = '5432'
+    #TODO: cross-mount a unix domain socket 
+    host = os.environ['%s_DB_1_PORT_5432_TCP_ADDR' % sys_name]
+    port = os.environ['%s_DB_1_PORT_5432_TCP_PORT' % sys_name]
 
     return databacon.connect({
         'shards': [{

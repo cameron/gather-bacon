@@ -1,5 +1,5 @@
-# Dex
+# Gather Bacon
 
-A web crawler demonstration of [databacon](http://github.com/cameron/databacon), a non-relational, horizontally scalable persistence framework.
+A rough draft of the gather API on top of databacon.
 
-Persistent data types are declared in [schema.py](server/src/schema.py), and then the fun gets started in [crawl.py](server/src/crawl.py).
+ Models are declared in [models/](server/app/schema.py), and the API in [routes.py](server/app/routes.py).

@@ -5,12 +5,31 @@ import functools
 
 from flask import request as flask_req, got_request_exception, session
 
-import http_exceptions as exceptions
+from exceptions import (
+  BadJson,
+  Unauthorized,
+  HTTPException,
+  InternalServerError,
+  UnrecognizedParameters
+)
 from app import app
 from schema import User
 
 
-__ALL__ = ['get', 'post', 'delete', 'require_json', 'is_logged_in_as', 'require_login', 'optional', 'init_session', 'json_spec', 'req', 'clear_session']
+__ALL__ = [
+  'get',
+  'post',
+  'delete',
+  'put',
+  'require_json',
+  'is_logged_in_as',
+  'require_login',
+  'optional',
+  'init_session',
+  'json_spec',
+  'req',
+  'clear_session'
+]
 
 
 class Request(object):
@@ -33,7 +52,7 @@ BODY_CODE_AND_HEADERS = 3
 def return_json(endpoint):
   ''' Decorate endpoint to return JSON with proper headers. '''
   @functools.wraps(endpoint)
-  def json_endpoint(*args, **kwargs):
+  def endpoint_returns_json(*args, **kwargs):
     
     code = 200
     headers = default_headers
@@ -48,20 +67,22 @@ def return_json(endpoint):
           headers.setdefault(header, val)
 
     return (json.dumps(response), code, headers)
-
-  json_endpoint.__name__ = endpoint.__name__
-  return json_endpoint
+  return endpoint_returns_json
 
 
-@app.errorhandler(exceptions.HTTPException)
+@app.errorhandler(Exception)
 @return_json
 def errorhandler(e):
-  return {'msg': e.msg}, e.response_code
+  if issubclass(type(e), HTTPException):
+    return {'msg': e.msg}, e.response_code
+  import traceback
+  traceback.print_exc()
+  return {'msg': 'internal server error'}, 500
 
 
 def is_logged_in_as(guid):
   if not logged_in_guid() == guid:
-    raise exceptions.Unauthorized
+    raise Unauthorized
   return True
 
 
@@ -74,13 +95,13 @@ def logged_in_guid():
 
 def require_login(fn):
   @functools.wraps(fn)
-  def authd_endpoint(*args, **kwargs):
+  def endpoint_requires_login(*args, **kwargs):
     guid = logged_in_guid()
     if guid:
       req.user = User.by_guid(guid)
       return fn(*args, **kwargs)
-    raise exceptions.Unauthorized()
-  return authd_endpoint
+    raise Unauthorized()
+  return endpoint_requires_login
 
 
 class optional(object):
@@ -88,13 +109,14 @@ class optional(object):
     self.name = name
 
 
-def _validate_and_convert(param, spec, keypath=''):
+def apply_json_spec(param, spec, keypath=''):
   ''' E.g.,
-  _validate_and_convert(json, {
-    'email': str                 # validate using a type (will NOT coerce)
+  apply_json_spec(json, {
+    'email': str                 # validate using a type (will NOT coerce, except unicode->str)
     'email': None                # no validation, but key is required
-    'email': validator           # custom validator/converter
-    'user': {'some': 'thing'}    # a sub-spec (dictionaries only)
+    'email': validator           # custom validator/converter,
+    'list_o_ints': [int]         # apply int as a validator to all elements
+    'user': {'some': 'thing'}    # a sub-spec 
     optional('email'): validator # optional key
   })
   '''
@@ -105,28 +127,44 @@ def _validate_and_convert(param, spec, keypath=''):
 
   # Basic type validation (no coercion)
   if type(spec) is type:
+    if type(param) is unicode and spec is str:
+      param = str(param)
     if type(param) is not spec:
-      raise exceptions.BadJson(spec, param, keypath)
+      raise BadJson(spec, param, keypath)
     return param
 
   # Custom validator/converter
   if callable(spec):   
     return spec(param) 
 
+  # List
+  if type(spec) is list:
+    if type(param) is not list:
+      raise BadJson(list, param, keypath)
+    if len(spec) == 1:
+      for idx,val in enumerate(param):
+        param[idx] = apply_json_spec(val, spec[0], keypath='%s[%s]' % (keypath, idx))
+    return param
+
   # Only remaining acceptable spec is a dict, so guard against programmer error
   if type(spec) is not dict:
-    raise app.dev and Exception() or exceptions.InternalServerError()
+    raise InternalServerError()
 
   # Dictionary
-  for spec_key, spec_key_spec in spec.iteritems():
-    spec_key_type = type(spec_key)
-    if spec_key_type is optional:
-      key = spec_key.name
+  unspecified_keys = param.keys()
+  for key, key_spec in spec.iteritems():
+    key_type = type(key)
+    if key_type is optional:
+      key = key.name
+    key in unspecified_keys and unspecified_keys.remove(key)
     try:
-      param[key] = _validate_and_convert(param[key], spec_key_spec, keypath + key)
+      param[key] = apply_json_spec(param[key], key_spec, keypath + key)
     except KeyError:
-      if spec_key_type is not optional:
-        raise app.dev and Exception() or exceptions.InternalServerError()
+      if key_type is not optional:
+        raise BadJson(spec, param, keypath)
+
+  if unspecified_keys:
+    raise UnrecognizedParameters(unspecified_keys)
 
   return param
 
@@ -134,11 +172,13 @@ def _validate_and_convert(param, spec, keypath=''):
 def json_spec(spec=None):
   def json_spec_dec(endpoint):
     @functools.wraps(endpoint)
-    def new_endpoint(*args, **kwargs):
-      _validate_and_convert(req.json, spec)
-      kwargs.update(req.json)
+    def endpoint_accepts_json(*args, **kwargs):
+      if kwargs.pop('_apply_json_spec', True):
+        if req.json:
+          print req.json
+          kwargs.update(apply_json_spec(req.json, spec))
       return endpoint(*args, **kwargs)
-    return new_endpoint
+    return endpoint_accepts_json
   return json_spec_dec
 
 
@@ -158,13 +198,15 @@ def method_route_decorator_factory(methods):
   
   Returned decorators also accept a `spec` kwarg, a dictionary that 
   will be used to validate request.json. Intended for POST methods. See
-  _validate_and_convert() above.
+  apply_json_spec() above.
 
   '''
 
   methods = type(methods) is str and [methods] or methods
-  def method_route_decorator_args(path, spec=None):
+  def method_route_decorator_args(path, spec=None, public=False):
     def method_route_decorator(endpoint):
+      if not public:
+        endpoint = require_login(endpoint)
       wrapper = return_json(endpoint)
       if json_spec:
         wrapper = json_spec(spec)(endpoint)
@@ -180,3 +222,4 @@ def method_route_decorator_factory(methods):
 get = method_route_decorator_factory('GET')
 post = method_route_decorator_factory('POST')
 delete = method_route_decorator_factory('DELETE')
+put = method_route_decorator_factory('PUT')

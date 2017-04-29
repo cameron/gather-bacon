@@ -1,0 +1,3 @@
+#! /bin/zsh
+
+ls docker-compose.yml **/Dockerfile | entr -r bin/run /_

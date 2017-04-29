@@ -1,0 +1,4 @@
+#! /bin/zsh
+
+ls server/***/*py | entr -s 'sleep 1 && python server/tests/api.py'
+#ls server/***/*py | entr -s 'sleep 1 && dshell gatherbacon_server "PYTHONPATH=/app:/vendor python server/btests/api.py"'
