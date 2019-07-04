@@ -1,4 +1,4 @@
-FROM debian:wheezy
+FROM debian:stretch
 
 RUN apt-get -y update && apt-get -y upgrade
 RUN apt-get -y install wget

@@ -1,0 +1,14 @@
+{
+  "name": "Dex",
+  "version": "1.0",
+  "description": "Personal web history",
+  "manifest_version": 2,
+  "permissions": [
+    "webNavigation",
+    "http://localhost*"
+  ],
+  "background": {
+    "persistent": true,
+    "scripts": ["background.js"]
+  }
+}

@@ -5,9 +5,9 @@ server:
     volumes:
         - ./volumes/logs:/logs
         - ./server/app:/app/
-        - ./server/vendor/greenhouse:/vendor/greenhouse
-        - ./server/vendor/datahog:/vendor/datahog
-        - ./server/vendor/databacon:/vendor/databacon
+        - ./server/vendor/greenhouse2:/vendor/greenhouse2
+        - ./server/vendor/datahog2:/vendor/datahog2
+        - ./server/vendor/databacon2:/vendor/databacon2
     links:
         - db:db
     ports:

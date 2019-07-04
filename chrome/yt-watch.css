@@ -1,0 +1,16 @@
+.looper {
+  position: absolute;
+  top: -700%;
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  background-color: rgba(150, 200, 250, .3);
+  height: 30px;
+  width: 100px;
+}
+
+.lp-handle {
+  width: 20px;
+  height: 100%;
+  background-color: rgba(150, 200, 250, .5);
+}
